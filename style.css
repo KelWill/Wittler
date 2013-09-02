@@ -1,0 +1,91 @@
+#header {
+  width: 90%;
+  font: 4em arial;
+}
+
+#left {
+  float: left;
+  width: 33%;
+}
+
+#right {
+  float: right;
+  width: 60%;
+}
+.small{
+  font: .5em arial;
+}
+.title{
+  margin: auto;
+  margin-bottom: .2em;
+  background-color: black;
+  color: white;
+  font-weight: bold;
+  text-align: center;
+  border-radius: 1em;
+  font: 2em arial;
+}
+
+#userFeeds{
+  margin-top: 2em;
+}
+
+.tweet {
+  font-weight: bold;
+  font-size: 2em;
+  background-color: white;
+  padding: 0 0 0 0;
+  border-radius: 1em;
+  border: 5px solid black;
+  margin: 0 0 .2em 0;
+}
+
+.hide {
+  display: none;
+}
+
+#username {
+  font-size: 2em;
+  text-align: left;
+  width: 50%;
+}
+
+#toTweet {
+  width: 100%;
+}
+
+input {
+  font-size: 2em;
+  text-align: center;
+}
+
+input:focus{
+  border-color: black;
+  box-shadow: 0 0 10px black;
+}
+
+.user{
+  text-align: center;
+}
+
+.user:hover {
+  border-color: grey;
+  color: white;
+  background-color: black;
+}
+
+.button {
+  font-size: 2em;
+  font-weight: bold;
+  text-align: center;
+  background-color: white;
+  border: 5px solid black;
+  border-radius: 1em;
+  margin-bottom: .2em;
+}
+
+.button:hover {
+  border-color: grey;
+  color: white;
+  background-color: black;
+}

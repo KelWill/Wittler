@@ -1,0 +1,233 @@
+<head>
+  <title>Wittler</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script src="http://documentcloud.github.com/underscore/underscore-min.js"></script>
+  <script src ="moment.js"></script>
+  <script src="http://www.parsecdn.com/js/parse-1.2.9.min.js"></script>
+  <link href = "style.css" rel = "stylesheet">
+  <script>
+    //this is starting parse and telling it where to save everything
+    Parse.initialize("PDi2uxFopwKQZereOjeXvRLRhNKJ8ma2vFMjMCAv", "hjKZOxyUUQwvLQAOBEFlYumEtMwZe6zvaiEXx3zd");
+    
+    //Creating a model of the type "Tweet"
+    var Tweet = Parse.Object.extend("Tweet");
+  
+    //View class for Tweet objects
+    var TweetView = Parse.View.extend({
+      render: function() {
+        var html = "<tweet>" + "&nbsp&nbsp;" + this.model.get('text') + " @" + this.model.get('user') + "<span class = 'small'></br>&nbsp&nbsp&nbsp&nbsp;&nbsp&nbsp;Weeted: " + this.model.get('date') + "<span><tweet>";
+        $(this.el).html(html).addClass(this.model.get('user')).addClass('tweet');
+        return this;
+      }     
+    });
+    
+    var currentUser = Parse.User.current();
+    
+    //Collection for models of the type "Tweet"
+    var TweetList = Parse.Collection.extend({
+      model: Tweet, 
+      returnUsers: function(){
+        var users = [];
+        this.forEach(function(model){
+          users.push(model.get('user'));
+        })
+        return _.unique(users);
+      }
+    });
+    
+    //create tweetList and fetch data associated with Tweet Models from Parse
+    var tweetList = new TweetList({});
+    tweetList.fetch({
+      success: function(myObject) {
+      
+        //TODO: refactor this to be part of view class
+        createUsersList(myObject.returnUsers());
+      }, 
+      error: function(myObject, error) {alert(error)}
+      });
+     
+    //View Collection      
+    var TweetListView = Parse.View.extend({
+      initialize: function(){
+        this.collection.on('add', this.addOne, this);
+        this.collection.on('reset', this.render, this);
+      }, 
+      render: function(){
+        $('.tweet').remove();
+        this.collection.forEach(this.addOne, this);
+        }, 
+      addOne: function(atweet){
+          var tweetView = new TweetView({model: atweet});
+          $(this.el).prepend(tweetView.render().el)
+         }
+    });
+    
+    //Passing in the collection that TweetListView is going to be following
+    var tweetListView = new TweetListView({collection: tweetList});
+    
+    //Creates new Tweet Model if user is logged in and adds it to tweetList
+    var addTweet = function(){
+      if (!currentUser) {
+        currentUser = Parse.User.current();
+      }
+      if (currentUser) {
+        var text = $('#toTweet').val();
+        var tweet = new Tweet({user: currentUser.get('username'), text: text, date: moment().calendar()})
+        tweetList.add(tweet);
+        tweet.save({
+          success: function(){
+            $('#toTweet').val("");
+          }        
+        });
+      }
+      else {
+        alert("Not logged in");
+      }
+    }
+    
+    //This function takes a list of users and creates a list of users under it. It's called in the success
+    //function of tweetList.fetch.
+    //TODO: refactor this so that it's part of the logic for the collection view
+    var createUsersList = function(users){
+      for (var i = 0; i < users.length; i++){
+        $('.users').append('<div class = "button user">' + users[i] + '</div>');
+      }
+    };
+    
+    //This object handles all the logic to do with logging in, signing up, and what should be displayed. 
+    var log = {
+    
+      //The signup function creates a new Parse user
+      signUp: function(){
+        var username = $('#signUp .username').val();
+        var password = $('#signUp .password').val();
+        if (password.length < 6) {
+          alert("Password is too short");
+          return;
+        }
+        var user = new Parse.User();
+        user.set("username", username);
+        user.set("password", password);
+        user.signUp(null, {
+          success: function(user){
+            $('#signUp').addClass('hide');
+            $('#logIn').addClass('hide');
+            $('#newTweet').removeClass('hide');
+            $('#logOut').removeClass('hide');
+            
+            //These two lines add a button for newly signed up users so that they can examine the feed
+            $('.users').append('<div class = "button user">' + username + '</div>');
+            $('.users').on('click', '.user', showUsersTweets);
+          }, 
+          error: function(user, error){
+            alert(error.message);
+          }
+        })
+      }, 
+      logIn: function(){
+        var username = $('#logIn .username').val();
+        var password = $('#logIn .password').val();
+          
+        Parse.User.logIn(username, password, {
+          success: function(user){
+            loggedSwitch();
+          },
+          error: function(user, error) {
+            alert("Either email or password was incorrect");
+          }
+        })
+      }, 
+        
+      showSignUp: function(){
+        $('#signUp').removeClass('hide');
+        $('#logIn').addClass('hide');
+        $(this).addClass('hide');
+       },
+      
+      logOut: function(){
+        Parse.User.logOut();
+        currentUser = null;
+        loggedSwitch();
+      }, 
+      cancel: function(){
+        $('#logIn').removeClass('hide');
+        $('#signUp').addClass('hide');
+        $('#signUpButton').removeClass('hide');
+      }
+    };
+    
+    //This function toggles classes to switch between logged in and logged out states
+    var loggedSwitch =  function() {
+        $('#newTweet').toggleClass('hide');
+        $('#signUpButton').toggleClass('hide');
+        $('#logIn').toggleClass('hide');
+        $('#logOut').toggleClass('hide');
+        $('#signUp').addClass('hide');
+      }
+    
+    //This is so that you can look at an individual user's feed
+    var showUsersTweets = function(){
+      var a = $(this).html();
+      $('.tweet').addClass('hide');
+      $('.' + a).removeClass('hide');
+    };
+    
+    //Button bindings
+    $(document).ready(function(){
+      $("#tweet").append(tweetListView.el);
+      $('#signUp').on('click', '.submit', log.signUp);
+      $('#signUp').on('click', '.cancel', log.cancel);
+      $('#logIn').on('click', '.button', log.logIn);
+      $('#logOut').on('click', log.logOut);
+      $('#signUpButton').on('click', log.showSignUp);
+      $('.showAllTweets').on('click', function(){
+        $('.tweet').removeClass('hide');
+      })
+      
+      $('.users').on('click', '.user', showUsersTweets);
+      var currentUser = Parse.User.current();
+      
+      //Sets page up properly if there a user was already logged in
+      if (currentUser) {
+        loggedSwitch();
+      }
+      
+      //checks every 5 seconds for new tweets
+      setInterval(function(){tweetList.fetch()}, 5000);      
+      
+    }); 
+    
+  </script>
+</head>
+
+<body>
+  <div id = "header" class = "title">WITTLER</div>
+  
+  <div id = "left">
+    <form id = "newTweet" class = "hide">
+      <input type = "textbox" id = "toTweet" placeholder = "Text to WEET"> </br>
+      <div class = "button" onClick = "addTweet()">WEET</div>
+    </form>
+    
+    <form id = "logIn">
+      <input type = "text" class = "username" placeholder = "Username"> </br>
+      <input type = "password" class = "password" placeholder = "Password"> </br>
+      <div class = "button">Log In</div>
+    </form>
+    
+    <div class = "button" id = "signUpButton">Sign Up!</div>
+    <form id = "signUp" class = "hide">
+      <input type = "text" class = "username" placeholder = "Username"> </br>
+      <input type = "password" class = "Password" placeholder = "Password"> </br>
+      <div class = "button submit">Done</div> </br>
+      <div class = "button cancel">Cancel</div>
+    </form>
+    <div class = "button hide" id = "logOut" >LOGOUT</div>
+    
+    <div class = "title" id = "userFeeds">USER FEEDS</div>
+    <div class = "users"></div>
+    <div class = "button showAllTweets">ALL TWEETS</div>
+  </div>
+  
+  <div id = "right"><div id = 'tweet'></div></div>
+</body>
