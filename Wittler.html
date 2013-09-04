@@ -8,7 +8,7 @@
   <script>
     //this is starting parse and telling it where to save everything
     Parse.initialize("PDi2uxFopwKQZereOjeXvRLRhNKJ8ma2vFMjMCAv", "hjKZOxyUUQwvLQAOBEFlYumEtMwZe6zvaiEXx3zd");
-    
+    var show;
     //Creating a model of the type "Tweet"
     var Tweet = Parse.Object.extend("Tweet");
   
@@ -17,6 +17,9 @@
       render: function() {
         var html = "<tweet>" + "&nbsp&nbsp;" + this.model.get('text') + " @" + this.model.get('user') + "<span class = 'small'></br>&nbsp&nbsp&nbsp&nbsp;&nbsp&nbsp;Weeted: " + this.model.get('date') + "<span><tweet>";
         $(this.el).html(html).addClass(this.model.get('user')).addClass('tweet');
+        if (show && show !== this.model.get('user')){
+          $(this.el).addClass('hide');
+        }
         return this;
       }     
     });
@@ -169,6 +172,7 @@
     var showUsersTweets = function(){
       var a = $(this).html();
       $('.tweet').addClass('hide');
+      show = a;
       $('.' + a).removeClass('hide');
     };
     
@@ -182,6 +186,7 @@
       $('#signUpButton').on('click', log.showSignUp);
       $('.showAllTweets').on('click', function(){
         $('.tweet').removeClass('hide');
+        show = "";
       })
       
       $('.users').on('click', '.user', showUsersTweets);
