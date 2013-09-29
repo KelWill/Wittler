@@ -74,7 +74,7 @@
       }
       if (currentUser) {
         var text = $('#toTweet').val();
-        var tweet = new Tweet({user: currentUser.get('username'), text: text, date: moment().calendar()})
+        var tweet = new Tweet({user: currentUser.get('username'), text: text, date: moment().format('MMMM Do YYYY, h:mm:ss a')})
         tweetList.add(tweet);
         tweet.save({
           success: function(){
